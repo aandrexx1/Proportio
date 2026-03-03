@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proportio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 3rem;
+            letter-spacing: 8px;
+            color: #00ff88;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            letter-spacing: 3px;
+            color: #444;
+            text-transform: uppercase;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: #111118;
+            border: 1px solid #1e1e2e;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .field {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            background: #0a0a0f;
+            border: 1px solid #1e1e2e;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e0e0e0;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { border-color: #00ff88; }
+
+        button {
+            width: 100%;
+            background: #00ff88;
+            color: #0a0a0f;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.85; }
+
+        #risultati {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 500px;
+            display: none;
+        }
+
+        .stat-box {
+            background: #111118;
+            border: 1px solid #1e1e2e;
+            border-radius: 16px;
+            padding: 30px 40px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1e1e2e;
+        }
+
+        .stat:last-child { border-bottom: none; }
+
+        .stat-label {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        .stat-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PROPORTIO</h1>
+    <p class="subtitle">Algorithmic Backtesting</p>
+
+    <div class="card">
+        <div class="field">
+            <label>Ticker</label>
+            <input type="text" id="ticker" placeholder="es. AAPL, TSLA, NVDA" value="AAPL">
+        </div>
+        <div class="field">
+            <label>Data Inizio</label>
+            <input type="date" id="start" value="2020-01-01">
+        </div>
+        <div class="field">
+            <label>Data Fine</label>
+            <input type="date" id="end" value="2025-01-01">
+        </div>
+        <div class="field">
+            <label>Capitale Iniziale (€)</label>
+            <input type="number" id="saldo" value="1000">
+        </div>
+        <div class="field">
+            <label>Stop Loss (es. 0.93 = -7%)</label>
+            <input type="number" id="stop_loss" value="0.93" step="0.01">
+        </div>
+        <div class="field">
+            <label>Take Profit (es. 1.50 = +50%)</label>
+            <input type="number" id="take_profit" value="1.50" step="0.01">
+        </div>
+        <button onclick="avvia()">▶ AVVIA BACKTEST</button>
+    </div>
+
+    <div id="risultati">
+        <div class="stat-box">
+            <div class="stat">
+                <span class="stat-label">Saldo Finale</span>
+                <span class="stat-value" id="saldo_finale">—</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Trade Vinti</span>
+                <span class="stat-value" id="trade_vinti">—</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Trade Persi</span>
+                <span class="stat-value" id="trade_persi">—</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function avvia() {
+            const dati = {
+                ticker: document.getElementById("ticker").value,
+                start: document.getElementById("start").value,
+                end: document.getElementById("end").value,
+                saldo: document.getElementById("saldo").value,
+                stop_loss: document.getElementById("stop_loss").value,
+                take_profit: document.getElementById("take_profit").value
+            };
+
+            const risposta = await fetch("/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dati)
+            });
+
+            const risultato = await risposta.json();
+
+            document.getElementById("saldo_finale").textContent = risultato.saldo_finale + " €";
+            document.getElementById("trade_vinti").textContent = risultato.trade_vinti;
+            document.getElementById("trade_persi").textContent = risultato.trade_persi;
+            document.getElementById("risultati").style.display = "block";
+        }
+    </script>
+
+</body>
+</html>
