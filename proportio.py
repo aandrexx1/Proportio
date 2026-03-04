@@ -1,10 +1,9 @@
 import yfinance as yf
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go  
 
 def esegui(ticker, start, end, saldo, stop_loss, take_profit):
 
     #Configurazione
-
     MA20 = 20
     MA50 = 50
 
@@ -92,20 +91,19 @@ def esegui(ticker, start, end, saldo, stop_loss, take_profit):
     print(f"Trade persi {losses}")
 
     # Grafico
-    plt.figure(figsize=(12, 6))
-    plt.plot(data["Close"], label="Prezzo", color="blue")
-    plt.plot(data["MA20"], label="Media Mobile 20gg", color="orange")
-    plt.plot(data["MA50"], label="Media Mobile 50gg", color="red")
-    plt.scatter(buy.index, buy["Close"], marker="^", color="green", s=100, label="BUY")
-    plt.scatter(sell.index, sell["Close"], marker="v", color="red", s=100, label="SELL")
-    plt.title(f"{ticker} - Prezzo e Medie Mobili Dal {start}")
-    plt.xlabel("Data")
-    plt.ylabel("Prezzo (USD)")
-    plt.legend()
-    plt.show()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=data.index, y=data["Close"].squeeze(), name="Prezzo", line=dict(color="#4a9eff")))
+    fig.add_trace(go.Scatter(x=data.index, y=data["MA20"].squeeze(), name="MA20", line=dict(color="orange")))
+    fig.add_trace(go.Scatter(x=data.index, y=data["MA50"].squeeze(), name="MA50", line=dict(color="red")))
+    fig.add_trace(go.Scatter(x=buy.index, y=buy["Close"].squeeze(), mode="markers", name="BUY", marker=dict(symbol="triangle-up", size=12, color="green")))
+    fig.add_trace(go.Scatter(x=sell.index, y=sell["Close"].squeeze(), mode="markers", name="SELL", marker=dict(symbol="triangle-down", size=12, color="red")))
+    fig.update_layout(paper_bgcolor="#0a0a0f", plot_bgcolor="#0a0a0f", font=dict(color="#e0e0e0"), title=f"{ticker} - Backtesting")
+    
+    grafico = fig.to_json()
 
     return{
         "saldo_finale": round(saldo, 2),
         "trade_vinti": win,
-        "trade_persi": losses    
+        "trade_persi": losses,    
+        "grafico": grafico
     }  

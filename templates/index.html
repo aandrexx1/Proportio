@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proportio</title>
@@ -177,6 +178,7 @@
                 <span class="stat-value" id="trade_persi">—</span>
             </div>
         </div>
+        <div id="grafico"></div>
     </div>
 
     <script>
@@ -196,12 +198,17 @@
                 body: JSON.stringify(dati)
             });
 
+            console.log("Status:", risposta.status);
             const risultato = await risposta.json();
+            console.log(risultato);
 
             document.getElementById("saldo_finale").textContent = risultato.saldo_finale + " €";
             document.getElementById("trade_vinti").textContent = risultato.trade_vinti;
             document.getElementById("trade_persi").textContent = risultato.trade_persi;
             document.getElementById("risultati").style.display = "block";
+            const graficoDiv = document.getElementById("grafico");
+            const parsed = JSON.parse(risultato.grafico);
+            Plotly.newPlot(graficoDiv, parsed.data, parsed.layout);
         }
     </script>
 
