@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proportio</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
 
@@ -15,10 +15,25 @@
             color: #e0e0e0;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .pages {
+            display: flex;
+            width: 200vw;
+            height: 100vh;
+            transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .page {
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             padding: 40px 20px;
+            overflow-y: auto;
         }
 
         h1 {
@@ -46,9 +61,7 @@
             max-width: 500px;
         }
 
-        .field {
-            margin-bottom: 24px;
-        }
+        .field { margin-bottom: 24px; }
 
         label {
             display: block;
@@ -92,11 +105,38 @@
 
         button:hover { opacity: 0.85; }
 
-        #risultati {
-            margin-top: 30px;
-            width: 100%;
-            max-width: 500px;
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #111118;
+            border: 1px solid #1e1e2e;
+            color: #00ff88;
+            font-size: 1.5rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            z-index: 100;
             display: none;
+        }
+
+        .nav-arrow:hover { background: #1e1e2e; }
+        .nav-arrow.left { left: 20px; }
+        .nav-arrow.right { right: 20px; }
+
+        #page2 {
+            justify-content: flex-start;
+            padding-top: 60px;
+        }
+
+        .grafico-container {
+            width: 100%;
+            max-width: 1000px;
         }
 
         .stat-box {
@@ -104,17 +144,20 @@
             border: 1px solid #1e1e2e;
             border-radius: 16px;
             padding: 30px 40px;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 20px;
+            display: flex;
+            gap: 40px;
+            justify-content: space-around;
         }
 
         .stat {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #1e1e2e;
+            gap: 8px;
         }
-
-        .stat:last-child { border-bottom: none; }
 
         .stat-label {
             font-size: 0.75rem;
@@ -125,45 +168,64 @@
 
         .stat-value {
             font-family: 'Space Mono', monospace;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             color: #00ff88;
+        }
+
+        .loading {
+            display: none;
+            font-family: 'Space Mono', monospace;
+            color: #00ff88;
+            letter-spacing: 3px;
+            font-size: 0.85rem;
+            margin-top: 16px;
         }
     </style>
 </head>
 <body>
 
-    <h1>PROPORTIO</h1>
-    <p class="subtitle">Algorithmic Backtesting</p>
+<div class="pages" id="pages">
 
-    <div class="card">
-        <div class="field">
-            <label>Ticker</label>
-            <input type="text" id="ticker" placeholder="es. AAPL, TSLA, NVDA" value="AAPL">
+    <!-- PAGINA 1: FORM -->
+    <div class="page" id="page1">
+        <h1>PROPORTIO</h1>
+        <p class="subtitle">Algorithmic Backtesting</p>
+
+        <div class="card">
+            <div class="field">
+                <label>Ticker</label>
+                <input type="text" id="ticker" placeholder="es. AAPL, TSLA, NVDA" value="AAPL">
+            </div>
+            <div class="field">
+                <label>Data Inizio</label>
+                <input type="date" id="start" value="2020-01-01">
+            </div>
+            <div class="field">
+                <label>Data Fine</label>
+                <input type="date" id="end" value="2025-01-01">
+            </div>
+            <div class="field">
+                <label>Capitale Iniziale (€)</label>
+                <input type="number" id="saldo" value="1000">
+            </div>
+            <div class="field">
+                <label>Stop Loss (es. 0.93 = -7%)</label>
+                <input type="number" id="stop_loss" value="0.93" step="0.01">
+            </div>
+            <div class="field">
+                <label>Take Profit (es. 1.50 = +50%)</label>
+                <input type="number" id="take_profit" value="1.50" step="0.01">
+            </div>
+            <button onclick="avvia()">▶ AVVIA BACKTEST</button>
+            <p class="loading" id="loading">ELABORAZIONE IN CORSO...</p>
         </div>
-        <div class="field">
-            <label>Data Inizio</label>
-            <input type="date" id="start" value="2020-01-01">
-        </div>
-        <div class="field">
-            <label>Data Fine</label>
-            <input type="date" id="end" value="2025-01-01">
-        </div>
-        <div class="field">
-            <label>Capitale Iniziale (€)</label>
-            <input type="number" id="saldo" value="1000">
-        </div>
-        <div class="field">
-            <label>Stop Loss (es. 0.93 = -7%)</label>
-            <input type="number" id="stop_loss" value="0.93" step="0.01">
-        </div>
-        <div class="field">
-            <label>Take Profit (es. 1.50 = +50%)</label>
-            <input type="number" id="take_profit" value="1.50" step="0.01">
-        </div>
-        <button onclick="avvia()">▶ AVVIA BACKTEST</button>
     </div>
 
-    <div id="risultati">
+    <!-- PAGINA 2: GRAFICO -->
+    <div class="page" id="page2">
+        <div class="grafico-container">
+            <div id="grafico" style="width:100%; height:500px;"></div>
+        </div>
         <div class="stat-box">
             <div class="stat">
                 <span class="stat-label">Saldo Finale</span>
@@ -178,39 +240,64 @@
                 <span class="stat-value" id="trade_persi">—</span>
             </div>
         </div>
-        <div id="grafico"></div>
     </div>
 
-    <script>
-        async function avvia() {
-            const dati = {
-                ticker: document.getElementById("ticker").value,
-                start: document.getElementById("start").value,
-                end: document.getElementById("end").value,
-                saldo: document.getElementById("saldo").value,
-                stop_loss: document.getElementById("stop_loss").value,
-                take_profit: document.getElementById("take_profit").value
-            };
+</div>
 
-            const risposta = await fetch("/run", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(dati)
-            });
+<!-- FRECCE NAVIGAZIONE -->
+<div class="nav-arrow left" id="arrow-left" onclick="vaiAPagina(1)">←</div>
+<div class="nav-arrow right" id="arrow-right" onclick="vaiAPagina(2)">→</div>
 
-            console.log("Status:", risposta.status);
-            const risultato = await risposta.json();
-            console.log(risultato);
+<script>
+    let paginaCorrente = 1;
 
-            document.getElementById("saldo_finale").textContent = risultato.saldo_finale + " €";
-            document.getElementById("trade_vinti").textContent = risultato.trade_vinti;
-            document.getElementById("trade_persi").textContent = risultato.trade_persi;
-            document.getElementById("risultati").style.display = "block";
-            const graficoDiv = document.getElementById("grafico");
-            const parsed = JSON.parse(risultato.grafico);
-            Plotly.newPlot(graficoDiv, parsed.data, parsed.layout);
+    function vaiAPagina(n) {
+        paginaCorrente = n;
+        const pages = document.getElementById("pages");
+        if (n === 1) {
+            pages.style.transform = "translateX(0)";
+            document.getElementById("arrow-left").style.display = "none";
+            document.getElementById("arrow-right").style.display = "flex";
+        } else {
+            pages.style.transform = "translateX(-100vw)";
+            document.getElementById("arrow-left").style.display = "flex";
+            document.getElementById("arrow-right").style.display = "none";
         }
-    </script>
+    }
+
+    async function avvia() {
+        document.getElementById("loading").style.display = "block";
+
+        const dati = {
+            ticker: document.getElementById("ticker").value,
+            start: document.getElementById("start").value,
+            end: document.getElementById("end").value,
+            saldo: document.getElementById("saldo").value,
+            stop_loss: document.getElementById("stop_loss").value,
+            take_profit: document.getElementById("take_profit").value
+        };
+
+        const risposta = await fetch("/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dati)
+        });
+
+        const risultato = await risposta.json();
+
+        document.getElementById("saldo_finale").textContent = risultato.saldo_finale + " €";
+        document.getElementById("trade_vinti").textContent = risultato.trade_vinti;
+        document.getElementById("trade_persi").textContent = risultato.trade_persi;
+
+        const graficoDiv = document.getElementById("grafico");
+        const parsed = JSON.parse(risultato.grafico);
+        Plotly.newPlot(graficoDiv, parsed.data, parsed.layout);
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("arrow-right").style.display = "flex";
+        vaiAPagina(2);
+    }
+</script>
 
 </body>
 </html>
